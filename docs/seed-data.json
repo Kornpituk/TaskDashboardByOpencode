@@ -1,0 +1,212 @@
+{
+  "users": [
+    {
+      "id": "U001",
+      "email": "alex@company.com",
+      "name": "Alex Kim",
+      "initials": "AK",
+      "role": "employee",
+      "avatar_class": "avatar-1",
+      "team_leader": false,
+      "password_hash": "bcrypt_hash_of_password"
+    },
+    {
+      "id": "U002",
+      "email": "maria@company.com",
+      "name": "Maria Jensen",
+      "initials": "MJ",
+      "role": "employee",
+      "avatar_class": "avatar-2",
+      "team_leader": false,
+      "password_hash": "bcrypt_hash_of_password"
+    },
+    {
+      "id": "U003",
+      "email": "ryan@company.com",
+      "name": "Ryan Lee",
+      "initials": "RL",
+      "role": "employee",
+      "avatar_class": "avatar-3",
+      "team_leader": false,
+      "password_hash": "bcrypt_hash_of_password"
+    },
+    {
+      "id": "U004",
+      "email": "sam@company.com",
+      "name": "Sam Hill",
+      "initials": "SH",
+      "role": "employee",
+      "avatar_class": "avatar-4",
+      "team_leader": false,
+      "password_hash": "bcrypt_hash_of_password"
+    },
+    {
+      "id": "M001",
+      "email": "manager@company.com",
+      "name": "Jordan Chen",
+      "initials": "JC",
+      "role": "manager",
+      "avatar_class": "avatar-1",
+      "team_leader": true,
+      "password_hash": "bcrypt_hash_of_password"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "TASK-101",
+      "title": "Implement user authentication flow",
+      "description": "Implement OAuth 2.0 authentication flow with support for Google and GitHub providers.",
+      "status": "In Progress",
+      "priority": "High",
+      "owner_id": "U001",
+      "due_date": "2026-05-10",
+      "labels": ["authentication", "security"],
+      "comments_count": 3,
+      "created_at": "2026-05-01",
+      "updated_at": "2026-05-06"
+    },
+    {
+      "id": "TASK-100",
+      "title": "Design system color tokens",
+      "description": "Define complete color token system including semantic colors.",
+      "status": "Done",
+      "priority": "Medium",
+      "owner_id": "U002",
+      "due_date": "2026-05-08",
+      "labels": ["design"],
+      "comments_count": 1,
+      "created_at": "2026-04-28",
+      "updated_at": "2026-05-08"
+    },
+    {
+      "id": "TASK-99",
+      "title": "API rate limiting middleware",
+      "description": "Create middleware for API rate limiting.",
+      "status": "Todo",
+      "priority": "High",
+      "owner_id": "U003",
+      "due_date": "2026-05-15",
+      "labels": ["backend"],
+      "comments_count": 0,
+      "created_at": "2026-05-03",
+      "updated_at": "2026-05-03"
+    },
+    {
+      "id": "TASK-98",
+      "title": "Update documentation for v2 API",
+      "description": "Update API documentation to reflect v2 changes.",
+      "status": "Todo",
+      "priority": "Low",
+      "owner_id": "U004",
+      "due_date": "2026-05-20",
+      "labels": ["docs"],
+      "comments_count": 0,
+      "created_at": "2026-05-02",
+      "updated_at": "2026-05-02"
+    },
+    {
+      "id": "TASK-97",
+      "title": "Performance optimization for dashboard",
+      "description": "Optimize dashboard rendering performance.",
+      "status": "In Progress",
+      "priority": "High",
+      "owner_id": "U001",
+      "due_date": "2026-05-05",
+      "labels": ["performance"],
+      "comments_count": 5,
+      "created_at": "2026-04-25",
+      "updated_at": "2026-05-05"
+    },
+    {
+      "id": "TASK-96",
+      "title": "Mobile responsive fixes",
+      "description": "Fix layout issues on mobile devices.",
+      "status": "Backlog",
+      "priority": "Medium",
+      "owner_id": "U002",
+      "due_date": "2026-05-25",
+      "labels": ["mobile"],
+      "comments_count": 2,
+      "created_at": "2026-04-30",
+      "updated_at": "2026-04-30"
+    },
+    {
+      "id": "TASK-95",
+      "title": "Add unit tests for auth module",
+      "description": "Write comprehensive unit tests for auth module.",
+      "status": "Done",
+      "priority": "Medium",
+      "owner_id": "U003",
+      "due_date": "2026-05-06",
+      "labels": ["testing"],
+      "comments_count": 0,
+      "created_at": "2026-04-29",
+      "updated_at": "2026-05-06"
+    },
+    {
+      "id": "TASK-94",
+      "title": "Investigate memory leak in worker",
+      "description": "Debug and fix memory leak in worker.",
+      "status": "In Progress",
+      "priority": "High",
+      "owner_id": "U004",
+      "due_date": "2026-05-12",
+      "labels": ["backend"],
+      "comments_count": 4,
+      "created_at": "2026-05-01",
+      "updated_at": "2026-05-07"
+    },
+    {
+      "id": "TASK-93",
+      "title": "Review pull request #247",
+      "description": "Code review for PR #247.",
+      "status": "Todo",
+      "priority": "Low",
+      "owner_id": "U001",
+      "due_date": "2026-05-18",
+      "labels": ["review"],
+      "comments_count": 0,
+      "created_at": "2026-05-05",
+      "updated_at": "2026-05-05"
+    },
+    {
+      "id": "TASK-92",
+      "title": "Refactor database queries",
+      "description": "Refactor N+1 queries.",
+      "status": "Backlog",
+      "priority": "Medium",
+      "owner_id": "U002",
+      "due_date": "2026-06-01",
+      "labels": ["backend"],
+      "comments_count": 1,
+      "created_at": "2026-05-04",
+      "updated_at": "2026-05-04"
+    },
+    {
+      "id": "TASK-91",
+      "title": "Setup CI/CD pipeline for staging",
+      "description": "Set up continuous deployment pipeline.",
+      "status": "Done",
+      "priority": "High",
+      "owner_id": "U003",
+      "due_date": "2026-05-03",
+      "labels": ["devops"],
+      "comments_count": 2,
+      "created_at": "2026-04-27",
+      "updated_at": "2026-05-03"
+    },
+    {
+      "id": "TASK-90",
+      "title": "Fix broken links in help center",
+      "description": "Audit and fix broken links.",
+      "status": "Done",
+      "priority": "Low",
+      "owner_id": "U004",
+      "due_date": "2026-05-07",
+      "labels": ["docs"],
+      "comments_count": 0,
+      "created_at": "2026-05-02",
+      "updated_at": "2026-05-07"
+    }
+  ]
+}
