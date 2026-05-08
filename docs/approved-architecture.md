@@ -10,6 +10,12 @@
 - Prototype Setup: `docker-compose.yml` for one-command PostgreSQL launch (reduces local setup complexity)
 - Visual Design: All UI except login page matches `task-dashboard.html` verbatim; login page removes role selector (approved exception)
 
+## Orchestration Architecture
+- **Orchestrator**: Integrated into Go backend as `internal/orchestrator/` package (not separate service)
+- **Agent State**: Tracked in PostgreSQL `agent_state` table; all agents report status to this table
+- **Workflow**: Dynamic rule-based (not static sequential); Orchestrator reads `agent_state` to determine next phase
+- **Agent Dashboard**: Separate developer tool (not part of TaskFlow app); reads from `GET /api/orchestrator/agent-state`
+
 ## Architecture Diagram
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
@@ -17,13 +23,20 @@
 │  (TypeScript)    │    │  (pgx driver)   │    │  (16-alpine)    │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
      │  Stores session ID       │  Enforces RBAC               │  Stores users/tasks/sessions
-     │  in localStorage         │  Validates sessions           │  JSONB for labels, DATE for due_date
+     │  in localStorage         │  Orchestrator Layer           │  agent_state table
+     │                         │  Validates sessions           │  JSONB for labels, DATE for due_date
+     
+┌─────────────────┐
+│ Agent Dashboard │──── GET /api/orchestrator/agent-state
+│ (Developer Tool)│
+└─────────────────┘
 ```
 
 ## Component Responsibilities
 - **Frontend**: Extracts 100% of CSS from `task-dashboard.html` to `styles/globals.css`; no Tailwind/custom styles. Auth state managed via React Context.
-- **Backend**: Gin router, RBAC middleware checks user role from session before serving manager-only endpoints.
-- **Database**: Single PostgreSQL instance via Docker Compose for prototype scope.
+- **Backend**: Gin router, RBAC middleware checks user role from session before serving manager-only endpoints. Orchestrator package manages dynamic workflow.
+- **Database**: Single PostgreSQL instance via Docker Compose for prototype scope. Stores `agent_state` table for orchestration.
+- **Orchestrator**: Rule-based workflow engine in Go backend. Reads/writes `agent_state` table to track agent progress and determine next phase.
 
 ## Revised API Contract
 All endpoints require `X-Session-Id` header (except login). No role parameters in requests:
@@ -39,3 +52,10 @@ All endpoints require `X-Session-Id` header (except login). No role parameters i
 | PUT | `/api/tasks/:id` | Yes | Manager | Update task fields. 200 response. |
 | GET | `/api/team` | Yes | Manager | Return team members with task counts. |
 | GET | `/api/team/stats` | Yes | Manager | Return aggregate task stats. |
+
+## Orchestrator API Contract
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/orchestrator/agent-state` | No* | Return all agent states from `agent_state` table. *For prototype, no auth required for developer dashboard. |
+| PUT | `/api/orchestrator/agent-state/:id` | No* | Update agent status (idle/working/done/error). Body: `{status, last_action}` |
+| GET | `/api/orchestrator/workflow` | No* | Return current workflow status and next phase to execute. |

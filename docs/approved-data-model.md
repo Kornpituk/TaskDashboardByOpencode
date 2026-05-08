@@ -44,6 +44,16 @@ CREATE TABLE sessions (
 CREATE INDEX idx_tasks_owner ON tasks(owner_id);
 CREATE INDEX idx_tasks_status ON tasks(status);
 CREATE INDEX idx_sessions_expiry ON sessions(expires_at);
+
+-- Agent State (for Orchestration)
+CREATE TABLE agent_state (
+  agent_id TEXT PRIMARY KEY, -- e.g., 'database-agent', 'backend-agent', 'frontend-agent'
+  current_phase TEXT NOT NULL,
+  status TEXT CHECK(status IN ('idle', 'working', 'done', 'error')) NOT NULL,
+  last_action TEXT,
+  error_count INTEGER DEFAULT 0,
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
 ## Data Type Notes

@@ -25,3 +25,17 @@ INSERT INTO tasks (id, title, description, status, priority, owner_id, due_date,
   ('TASK-91', 'Setup CI/CD pipeline for staging', 'Set up continuous deployment pipeline.', 'Done', 'High', 'U003', '2026-05-03', '["devops"]'::jsonb, 2, '2026-04-27', '2026-05-03'),
   ('TASK-90', 'Fix broken links in help center', 'Audit and fix broken links.', 'Done', 'Low', 'U004', '2026-05-07', '["docs"]'::jsonb, 0, '2026-05-02', '2026-05-07')
 ON CONFLICT (id) DO NOTHING;
+
+-- Seed agent states for Orchestration
+INSERT INTO agent_state (agent_id, current_phase, status, last_action, updated_at) VALUES
+  ('audit-agent', 'phase-1', 'done', 'Completed full codebase audit and documented architecture.', NOW()),
+  ('db-agent', 'phase-2', 'done', 'Schema migrations and seed data applied successfully.', NOW()),
+  ('api-agent', 'phase-3', 'done', 'Backend API endpoints for Auth, Tasks, and Team implemented.', NOW()),
+  ('ui-agent', 'phase-4', 'working', 'Implementing core layout and dashboard views.', NOW()),
+  ('component-agent', 'phase-5', 'idle', 'Waiting for core layout completion.', NOW()),
+  ('orch-agent', 'phase-6', 'idle', 'Orchestrator logic pending integration.', NOW())
+ON CONFLICT (agent_id) DO UPDATE SET
+  current_phase = EXCLUDED.current_phase,
+  status = EXCLUDED.status,
+  last_action = EXCLUDED.last_action,
+  updated_at = EXCLUDED.updated_at;

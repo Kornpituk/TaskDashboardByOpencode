@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
 
 interface RequestOptions {
   method?: string;
@@ -92,7 +92,54 @@ export interface TeamStats {
   low_priority: number;
 }
 
+export interface AgentState {
+  agent_id: string;
+  current_phase: string;
+  status: 'idle' | 'working' | 'done' | 'error';
+  last_action: string;
+  error_count: number;
+  updated_at: string;
+}
+
+export interface WorkflowStatus {
+  phases: string[];
+  phase_names: Record<string, string>;
+  agents: AgentState[];
+  next_phase: string;
+}
+
+export interface AgentRun {
+  run_id: string;
+  workflow_id: string;
+  agent_id: string;
+  phase_id: string;
+  status: 'pending' | 'running' | 'success' | 'failed' | 'skipped' | 'cancelled';
+  input: Record<string, any>;
+  output?: Record<string, any>;
+  error_message?: string;
+  retry_count: number;
+  max_retries: number;
+  started_at?: string;
+  completed_at?: string;
+  created_at: string;
+}
+
+export interface AgentLog {
+  id: number;
+  run_id: string;
+  agent_id: string;
+  level: string;
+  message: string;
+  created_at: string;
+}
+
+export interface WSMessage {
+  type: string;
+  payload: any;
+}
+
 export const api = {
+  // ... existing methods
   login: (data: LoginRequest) =>
     apiRequest<LoginResponse>('/api/auth/login', {
       method: 'POST',
@@ -131,4 +178,29 @@ export const api = {
     apiRequest<TeamStats>('/api/team/stats', {
       sessionId,
     }),
+
+  // Orchestrator methods
+  getAgentStates: () =>
+    apiRequest<AgentState[]>('/api/orchestrator/agent-state'),
+
+  getWorkflowStatus: () =>
+    apiRequest<WorkflowStatus>('/api/orchestrator/workflow'),
+
+  updateAgentState: (id: string, data: { status: string; last_action: string; phase: string; error_count?: number }) =>
+    apiRequest<void>(`/api/orchestrator/agent-state/${id}`, {
+      method: 'PUT',
+      body: data,
+    }),
+
+  startWorkflow: () =>
+    apiRequest<{ workflow_id: string; phases: number; started: number }>('/api/orchestrator/workflow/start', { method: 'POST' }),
+
+  getRuns: () =>
+    apiRequest<AgentRun[]>('/api/orchestrator/runs'),
+
+  getRun: (id: string) =>
+    apiRequest<{ run: AgentRun; logs: AgentLog[] }>(`/api/orchestrator/runs/${id}`),
+
+  executeAgent: (id: string) =>
+    apiRequest<void>(`/api/orchestrator/agent/${id}/execute`, { method: 'POST' }),
 };

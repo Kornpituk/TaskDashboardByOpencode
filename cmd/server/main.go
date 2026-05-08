@@ -13,6 +13,8 @@ import (
 
 	"github.com/anomalyco/taskdashboard/internal/handlers"
 	"github.com/anomalyco/taskdashboard/internal/middleware"
+	"github.com/anomalyco/taskdashboard/internal/orchestrator"
+	"github.com/anomalyco/taskdashboard/internal/orchestrator/agents"
 	"github.com/anomalyco/taskdashboard/internal/store/postgres"
 )
 
@@ -60,13 +62,46 @@ func main() {
 		team.GET("/stats", teamHandler.GetStats)
 	}
 
+	// Orchestrator routes (no auth for prototype - developer dashboard)
+	orchStore := orchestrator.NewStore(store.Pool())
+
+	registry := orchestrator.NewRegistry()
+	registry.Register(&agents.AuditAgent{})
+	registry.Register(&agents.DBAgent{})
+	registry.Register(&agents.APIAgent{})
+	registry.Register(&agents.UIAgent{})
+	registry.Register(&agents.ComponentAgent{})
+	registry.Register(&agents.OrchAgent{})
+
+	artifactStore := orchestrator.NewArtifactStore(store.Pool())
+	engine := orchestrator.NewWorkflowEngine(registry, orchStore, artifactStore)
+	hub := orchestrator.NewHub()
+	go hub.Run()
+
+	runner := orchestrator.NewJobRunner(registry, orchStore, artifactStore, engine, hub, 3)
+	runner.Start()
+
+	orchHandler := handlers.NewOrchestratorHandler(orchStore, engine, runner, hub, registry)
+	orchestratorGroup := api.Group("/orchestrator")
+	{
+		orchestratorGroup.GET("/agent-state", orchHandler.GetAgentStates)
+		orchestratorGroup.PUT("/agent-state/:id", orchHandler.UpdateAgentState)
+		orchestratorGroup.GET("/workflow", orchHandler.GetWorkflowStatus)
+		orchestratorGroup.POST("/init", orchHandler.InitializeAgent)
+		orchestratorGroup.POST("/workflow/start", orchHandler.StartWorkflow)
+		orchestratorGroup.GET("/runs", orchHandler.ListRuns)
+		orchestratorGroup.GET("/runs/:id", orchHandler.GetRun)
+		orchestratorGroup.POST("/agent/:id/execute", orchHandler.ExecuteAgent)
+		orchestratorGroup.GET("/ws", orchHandler.HandleWebSocket)
+	}
+
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":8081",
 		Handler: r,
 	}
 
 	go func() {
-		log.Println("Server starting on :8080")
+		log.Println("Server starting on :8081")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("ListenAndServe error: %v", err)
 		}
@@ -77,6 +112,9 @@ func main() {
 	<-quit
 
 	log.Println("Shutting down server...")
+
+	runner.Stop()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskFlow - Agent Orchestrator Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    :root {
+      --bg: oklch(99% 0.002 240);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(18% 0.012 250);
+      --muted: oklch(54% 0.012 250);
+      --border: oklch(92% 0.005 250);
+      --accent: oklch(58% 0.18 255);
+      --success: oklch(45% 0.15 150);
+      --error: oklch(58% 0.18 25);
+      --warning: oklch(65% 0.15 45);
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--fg);
+      background: var(--bg);
+      padding: 24px;
+    }
+    
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+    
+    .title {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 20px;
+    }
+    
+    .badge-idle { background: oklch(94% 0.008 260); color: oklch(50% 0.02 260); }
+    .badge-working { background: oklch(90% 0.12 260); color: oklch(55% 0.18 260); }
+    .badge-done { background: oklch(90% 0.1 150); color: oklch(45% 0.15 150); }
+    .badge-error { background: oklch(94% 0.008 240); color: oklch(45% 0.015 240); }
+    
+    .workflow-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    
+    .section-title {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+    
+    .phase-list {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .phase-item {
+      padding: 8px 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    
+    .phase-item.done { border-color: var(--success); background: oklch(90% 0.1 150 / 0.3); }
+    
+    .next-phase {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: oklch(90% 0.12 260 / 0.3);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .agents-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+    }
+    
+    .agent-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    
+    .agent-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .agent-name {
+      font-weight: 600;
+      font-size: 15px;
+    }
+    
+    .agent-info {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    
+    .error-count {
+      color: var(--error);
+      font-weight: 500;
+    }
+    
+    .refresh-btn {
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 8px;
+      cursor: pointer;
+      background: var(--fg);
+      color: var(--surface);
+      border: none;
+    }
+    
+    .refresh-btn:hover { opacity: 0.9; }
+    
+    .api-info {
+      margin-top: 32px;
+      padding: 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1 class="title">Agent Orchestrator Dashboard</h1>
+    <button class="refresh-btn" onclick="loadData()">Refresh</button>
+  </div>
+  
+  <div class="workflow-section">
+    <h2 class="section-title">Workflow Status</h2>
+    <div id="workflowStatus"></div>
+  </div>
+  
+  <div class="workflow-section">
+    <h2 class="section-title">Agent States</h2>
+    <div id="agentsGrid" class="agents-grid"></div>
+  </div>
+  
+  <div class="api-info">
+    API Endpoints:<br>
+    GET /api/orchestrator/agent-state - All agent states<br>
+    PUT /api/orchestrator/agent-state/:id - Update agent state<br>
+    GET /api/orchestrator/workflow - Workflow status<br>
+    POST /api/orchestrator/init - Initialize agent
+  </div>
+  
+  <script>
+    const API_BASE = 'http://localhost:8080/api/orchestrator';
+    
+    async function loadData() {
+      await Promise.all([
+        loadWorkflowStatus(),
+        loadAgentStates()
+      ]);
+    }
+    
+    async function loadWorkflowStatus() {
+      try {
+        const res = await fetch(`${API_BASE}/workflow`);
+        const data = await res.json();
+        
+        let html = '<div class="phase-list">';
+        data.phases.forEach(p => {
+          const name = data.phase_names[p] || p;
+          const isDone = data.agents.some(a => a.current_phase === p && a.status === 'done');
+          html += `<div class="phase-item ${isDone ? 'done' : ''}">${name}</div>`;
+        });
+        html += '</div>';
+        
+        if (data.next_phase && data.next_phase !== 'all-done') {
+          const nextName = data.phase_names[data.next_phase] || data.next_phase;
+          html += `<div class="next-phase">Next: ${nextName}</div>`;
+        } else {
+          html += `<div class="next-phase" style="border-color:var(--success);background:oklch(90% 0.1 150 / 0.3);">All phases complete!</div>`;
+        }
+        
+        document.getElementById('workflowStatus').innerHTML = html;
+      } catch (err) {
+        document.getElementById('workflowStatus').innerHTML = `<p style="color:var(--error);">Error: ${err.message}</p>`;
+      }
+    }
+    
+    async function loadAgentStates() {
+      try {
+        const res = await fetch(`${API_BASE}/agent-state`);
+        const agents = await res.json();
+        
+        if (agents.length === 0) {
+          document.getElementById('agentsGrid').innerHTML = '<p style="color:var(--muted);">No agents registered yet.</p>';
+          return;
+        }
+        
+        let html = '';
+        agents.forEach(a => {
+          const statusClass = `badge-${a.status}`;
+          html += `
+            <div class="agent-card">
+              <div class="agent-header">
+                <span class="agent-name">${a.agent_id}</span>
+                <span class="badge ${statusClass}">${a.status}</span>
+              </div>
+              <div class="agent-info">Phase: ${a.current_phase || 'N/A'}</div>
+              <div class="agent-info">Action: ${a.last_action || 'N/A'}</div>
+              <div class="agent-info">Updated: ${new Date(a.updated_at).toLocaleString()}</div>
+              ${a.error_count > 0 ? `<div class="agent-info error-count">Errors: ${a.error_count}</div>` : ''}
+            </div>
+          `;
+        });
+        
+        document.getElementById('agentsGrid').innerHTML = html;
+      } catch (err) {
+        document.getElementById('agentsGrid').innerHTML = `<p style="color:var(--error);">Error: ${err.message}</p>`;
+      }
+    }
+    
+    // Auto-refresh every 5 seconds
+    setInterval(loadData, 5000);
+    loadData();
+  </script>
+</body>
+</html>

@@ -40,6 +40,11 @@ func (s *Store) Close() {
 	s.db.Close()
 }
 
+// Pool returns the underlying connection pool for use by other packages
+func (s *Store) Pool() *pgxpool.Pool {
+	return s.db
+}
+
 type User struct {
 	ID           string
 	Email        string
